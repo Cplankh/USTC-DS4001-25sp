@@ -39,17 +39,20 @@ class ShortestPathProblem(SearchProblem):
 
     def startState(self) -> State:
         # BEGIN_YOUR_CODE (our solution is 1 line of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        return State(self.startLocation,None)
         # END_YOUR_CODE
 
     def isEnd(self, state: State) -> bool:
         # BEGIN_YOUR_CODE (our solution is 1 line of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        return self.endTag in self.cityMap.tags[state.location]
         # END_YOUR_CODE
 
     def successorsAndCosts(self, state: State) -> List[Tuple[str, State, float]]:
         # BEGIN_YOUR_CODE (our solution is 4 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        list=[]
+        for nextLocation, distance in self.cityMap.distances[state.location].items():
+            list.append([nextLocation, State(nextLocation, None), distance])
+        return list
         # END_YOUR_CODE
 
 
@@ -71,7 +74,9 @@ def getUSTCShortestPathProblem() -> ShortestPathProblem:
     cityMap = createUSTCMap()
 
     # BEGIN_YOUR_CODE (our solution is 2 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError("Override me")
+    startLocation = "3437129855"
+    #endTag = "entrance=yes"
+    endTag = "parking=underground"
     # END_YOUR_CODE
     return ShortestPathProblem(startLocation, endTag, cityMap)
 
@@ -100,17 +105,36 @@ class WaypointsShortestPathProblem(SearchProblem):
 
     def startState(self) -> State:
         # BEGIN_YOUR_CODE (our solution is 1 line of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        passby = []
+        for i in range(len(self.waypointTags)):
+            if self.waypointTags[i] in self.cityMap.tags[self.startLocation]: 
+                passby.append(1)
+            else: passby.append(0)
+        passby = tuple(passby)
+        return State(self.startLocation, passby)
         # END_YOUR_CODE
 
     def isEnd(self, state: State) -> bool:
         # BEGIN_YOUR_CODE (our solution is 1 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        if self.endTag not in self.cityMap.tags[state.location]:
+            return False
+        for elem in state.memory:
+            if elem==0: 
+                return False
+        return True
         # END_YOUR_CODE
 
     def successorsAndCosts(self, state: State) -> List[Tuple[str, State, float]]:
         # BEGIN_YOUR_CODE (our solution is 13 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        returnlist = []
+        for nextLocation, distance in self.cityMap.distances[state.location].items():
+            nextmemory = list(state.memory)
+            for i in range(len(self.waypointTags)):
+                if self.waypointTags[i] in self.cityMap.tags[nextLocation]: 
+                    nextmemory[i] = 1
+            nextmemory = tuple(nextmemory)
+            returnlist.append((nextLocation, State(nextLocation, nextmemory), distance))
+        return returnlist 
         # END_YOUR_CODE
 
 
@@ -128,7 +152,10 @@ def getUSTCWaypointsShortestPathProblem() -> WaypointsShortestPathProblem:
     """
     cityMap = createUSTCMap()
     # BEGIN_YOUR_CODE (our solution is 3 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError("Override me")
+    startLocation = "3437129855"
+    waypointTags = ["amenity=food", "landmark=bookstore"]
+    #endTag = "entrance=yes"
+    endTag = "parking=underground"
     # END_YOUR_CODE
     return WaypointsShortestPathProblem(startLocation, waypointTags, endTag, cityMap)
 
@@ -150,25 +177,28 @@ def aStarReduction(problem: SearchProblem, heuristic: Heuristic) -> SearchProble
     class NewSearchProblem(SearchProblem):
         def __init__(self):
             # BEGIN_YOUR_CODE (our solution is 3 line of code, but don't worry if you deviate from this)
-            raise NotImplementedError("Override me")
-            self.startLocation
-            self.endTag
-            self.cityMap
+            self.startLocation=problem.startLocation
+            self.endTag=problem.endTag
+            self.cityMap=problem.cityMap
             # END_YOUR_CODE
 
         def startState(self) -> State:
             # BEGIN_YOUR_CODE (our solution is 1 line of code, but don't worry if you deviate from this)
-            raise NotImplementedError("Override me")
+            return problem.startState()
             # END_YOUR_CODE
 
         def isEnd(self, state: State) -> bool:
             # BEGIN_YOUR_CODE (our solution is 1 line of code, but don't worry if you deviate from this)
-            raise NotImplementedError("Override me")
+            return problem.isEnd(state)
             # END_YOUR_CODE
 
         def successorsAndCosts(self, state: State) -> List[Tuple[str, State, float]]:
             # BEGIN_YOUR_CODE (our solution is 7 lines of code, but don't worry if you deviate from this)
-            raise NotImplementedError("Override me")
+            returnlist = problem.successorsAndCosts(state)
+            for elem in returnlist:
+                elem = list(elem)
+                elem[2] = elem[2]+ heuristic.evaluate(elem[1]) - heuristic.evaluate(state)
+                elem = [elem]
             # END_YOUR_CODE
 
     return NewSearchProblem()
@@ -189,12 +219,20 @@ class StraightLineHeuristic(Heuristic):
 
         # Precompute
         # BEGIN_YOUR_CODE (our solution is 4 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        list=[]
+        for location in self.cityMap.geoLocations.keys():
+            if endTag in self.cityMap.tags[location]:
+                list.append(location)
+        self.endLocations =list
         # END_YOUR_CODE
 
     def evaluate(self, state: State) -> float:
         # BEGIN_YOUR_CODE (our solution is 6 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        llist=[]
+        for endLocation in self.endLocations:
+            llist.append(computeDistance(self.cityMap.geoLocations[state.location], self.cityMap.geoLocations[endLocation]))
+        return max(llist)    
+        #return max([computeDistance(self.cityMap.geoLocations[state.location], self.cityMap.geoLocations[endLocation]) for endLocation in self.endLocations])
         # END_YOUR_CODE
 
 
@@ -210,12 +248,22 @@ class NoWaypointsHeuristic(Heuristic):
     def __init__(self, endTag: str, cityMap: CityMap):
         # Precompute
         # BEGIN_YOUR_CODE (our solution is 14 lines of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        self.min_distances = {}
+        end_locations = [loc for loc, tags in cityMap.tags.items() if endTag in tags]
+        for start_loc in cityMap.geoLocations:
+            min_cost = float('inf')
+            for end_loc in end_locations:
+                problem = ShortestPathProblem(start_loc, endTag, cityMap)
+                ucs = UniformCostSearch()
+                ucs.solve(problem)
+                if ucs.actions:
+                    min_cost = min(min_cost, ucs.pathCost)  
+            self.min_distances[start_loc] = min_cost
         # END_YOUR_CODE
 
     def evaluate(self, state: State) -> float:
         # BEGIN_YOUR_CODE (our solution is 1 line of code, but don't worry if you deviate from this)
-        raise NotImplementedError("Override me")
+        return self.min_distances.get(state.location,float('inf'))
         # END_YOUR_CODE
 
 
@@ -229,7 +277,7 @@ def getHefeiShortestPathProblem(cityMap: CityMap) -> ShortestPathProblem:
     startLocation=locationFromTag(makeTag("landmark", "USTC"), cityMap)
     endTag=makeTag("landmark", "Chaohu")
     # BEGIN_YOUR_CODE (our solution is 1 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError("Override me")
+    return ShortestPathProblem(startLocation, endTag, cityMap)
     # END_YOUR_CODE
 
 def getHefeiShortestPathProblem_withHeuristic(cityMap: CityMap) -> ShortestPathProblem:
@@ -239,5 +287,6 @@ def getHefeiShortestPathProblem_withHeuristic(cityMap: CityMap) -> ShortestPathP
     startLocation=locationFromTag(makeTag("landmark", "USTC"), cityMap)
     endTag=makeTag("landmark", "Chaohu")
     # BEGIN_YOUR_CODE (our solution is 2 lines of code, but don't worry if you deviate from this)
-    raise NotImplementedError("Override me")
+    heuristic = StraightLineHeuristic(endTag, cityMap)
+    return aStarReduction(ShortestPathProblem(startLocation, endTag, cityMap), heuristic)
     # END_YOUR_CODE
